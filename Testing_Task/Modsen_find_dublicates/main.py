@@ -1,46 +1,46 @@
-from helpers import (
-    calculate_image_hashes,
-    display_duplicates,
-    find_duplicates,
-    load_images_from_folder, extract_features
-)
+from helpers.hashing import calculate_image_hashes
+from helpers.ui import display_duplicates
+from helpers.duplicates_finder import find_duplicates
+from helpers.image_loader import load_images_from_folders
+from helpers.feature_extraction import extract_features
 
 
-def find_duplicates_app(folder1, folder2=None, method='phash', use_nn=False, threshold=0.9):
-    images1 = load_images_from_folder(folder1)
-    hashes1 = calculate_image_hashes(images1, method=method)
+def find_duplicates_app(folders, method='phash', use_nn=False, threshold=0.9):
+    """
+        Find and display duplicate images from multiple folders.
+
+        Args:
+            folders (list): List of folder paths containing images.
+            method (str): Hashing method to use ('phash', 'dhash', 'whash', 'ahash').
+            use_nn (bool): Use neural network for feature extraction if True.
+            threshold (float): Threshold for cosine similarity to consider images as duplicates.
+
+        Returns:
+            list: List of tuples containing paths of duplicate images.
+    """
+    images = load_images_from_folders(folders)
+    hashes = calculate_image_hashes(images, method=method)
     feature_vectors = None
 
     if use_nn:
-        feature_vectors = {path: extract_features(path) for path in images1.keys()}
-        if folder2:
-            images2 = load_images_from_folder(folder2)
-            hashes2 = calculate_image_hashes(images2, method=method)
-            combined_hashes = {**hashes1, **hashes2}
-            feature_vectors.update({path: extract_features(path) for path in images2.keys()})
-        else:
-            combined_hashes = hashes1
-    else:
-        if folder2:
-            images2 = load_images_from_folder(folder2)
-            hashes2 = calculate_image_hashes(images2, method=method)
-            combined_hashes = {**hashes1, **hashes2}
-        else:
-            combined_hashes = hashes1
+        feature_vectors = {path: extract_features(path) for path in
+                           images.keys()}
 
-    duplicates = find_duplicates(combined_hashes, feature_vectors=feature_vectors, threshold=threshold)
+    duplicates = find_duplicates(hashes, feature_vectors=feature_vectors,
+                                 threshold=threshold)
     display_duplicates(duplicates)
     return duplicates
 
 
-if __name__ == '__main__':
-    # Define the folders containing the images
-    folder1 = 'images/Lilly'
-    folder2 = 'images/Lotus'
+def render_main(folders):
+    duplicates = find_duplicates_app(folders, method='phash', use_nn=True,
+                                     threshold=0.9)
 
-    # Find and display duplicates
-    duplicates = find_duplicates_app(folder1, folder2, method='phash', use_nn=True, threshold=0.9)
-
-    # Print the duplicate pairs
     for dup in list(set(duplicates)):
         print(f"Duplicate found: {dup[0]} and {dup[1]}")
+
+
+if __name__ == '__main__':
+    folders = ['images/Lilly', 'images/Lotus', 'images/test_folder_1']
+    render_main(folders)
+
